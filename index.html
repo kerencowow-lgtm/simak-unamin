@@ -670,15 +670,29 @@ function openAssetModal(id){
     let fotoBase64 = "";
     let namaFoto = "";
 
-    // Membaca file gambar jika admin memilih foto
-    if (fileInput && fileInput.files.length > 0) {
-        const file = fileInput.files[0];
+    // Membaca file gambar dengan aman jika admin memilih foto
+    if (fileInput && fileInput.files && fileInput.files.length > 0) {
+        const file = fileInput.files[0]; // Mengambil file pertama yang dipilih
         namaFoto = file.name;
-        fotoBase64 = await new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result.split(',')[1]); // Ambil data murni base64
-            reader.readAsDataURL(file);
-        });
+        
+        try {
+            fotoBase64 = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    if (reader.result) {
+                        // Mengambil data murni base64 setelah tanda koma
+                        const base64String = reader.result.split(',')[1];
+                        resolve(base64String);
+                    } else {
+                        resolve("");
+                    }
+                };
+                reader.onerror = error => reject(error);
+                reader.readAsDataURL(file);
+            });
+        } catch (e) {
+            console.error("Gagal membaca file gambar:", e);
+        }
     }
     const data = {
         ID: item ? item.ID : undefined,
