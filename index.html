@@ -659,22 +659,39 @@ function openAssetModal(id){
       </select>
     </div>
     <div class="field"><label>Keterangan (opsional)</label><textarea id="f_ket">${item?escapeHtml(item.Keterangan):''}</textarea></div>
+    <div class="field"><label>Unggah Foto Aset</label><input type="file" id="f_foto" accept="image/*"></div>
     <div class="modal-actions">
       <button class="btn" onclick="closeModal()">Batal</button>
       <button class="btn primary" id="saveAssetBtn">Simpan</button>
     </div>
   `);
-  document.getElementById('saveAssetBtn').addEventListener('click', async ()=>{
+  document.getElementById('saveAssetBtn').addEventListener('click', async () => {
+    const fileInput = document.getElementById('f_foto');
+    let fotoBase64 = "";
+    let namaFoto = "";
+
+    // Membaca file gambar jika admin memilih foto
+    if (fileInput && fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        namaFoto = file.name;
+        fotoBase64 = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result.split(',')[1]); // Ambil data murni base64
+            reader.readAsDataURL(file);
+        });
+    }
     const data = {
-      ID: item ? item.ID : undefined,
-      'Kode Aset': document.getElementById('f_kode').value.trim(),
-      'Nama Aset': document.getElementById('f_nama').value.trim(),
-      'Kategori': document.getElementById('f_kategori').value.trim(),
-      'Lokasi': document.getElementById('f_lokasi').value.trim(),
-      'Kondisi': document.getElementById('f_kondisi').value,
-      'Status': document.getElementById('f_status').value,
-      'Tanggal Masuk': item ? item['Tanggal Masuk'] : new Date().toISOString().slice(0,10),
-      'Keterangan': document.getElementById('f_ket').value.trim()
+        ID: item ? item.ID : undefined,
+        'Kode Aset': document.getElementById('f_kode').value.trim(),
+        'Nama Aset': document.getElementById('f_nama').value.trim(),
+        'Kategori': document.getElementById('f_kategori').value.trim(),
+        'Lokasi': document.getElementById('f_lokasi').value.trim(),
+        'Kondisi': document.getElementById('f_kondisi').value.trim(),
+        'Status': document.getElementById('f_status').value.trim(),
+        'Tanggal Masuk': item ? item['Tanggal Masuk'] : new Date().toISOString().slice(0,10),
+        'Keterangan': document.getElementById('f_ket').value.trim(),
+        'fotoRaw': fotoBase64,  // Kirim data mentah gambar ke backend
+        'namaFoto': namaFoto    // Kirim nama file gambar
     };
     if(!data['Kode Aset'] || !data['Nama Aset']){ toast('Kode dan nama aset wajib diisi', 'err'); return; }
     const res = await apiPost(item ? 'updateAsset' : 'addAsset', {data});
